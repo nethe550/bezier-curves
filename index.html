@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta name="author" content="nethe550" />
+        <title>Bézier Curves</title>
+        <link rel="stylesheet" href="index.css" />
+    </head>
+    <body>
+        <canvas id="display"></canvas>
+        <div id="controls">
+            <label for="control-lines">Control Lines: </label>
+            <input name="control-lines" id="control-lines" type="checkbox" checked="checked" />
+            |
+            <label for="tangent-lines">Tangent Lines: </label>
+            <input name="tangent-lines" id="tangent-lines" type="checkbox" checked="checked" />
+        </div>
+        <script src="vector2.js"></script>
+        <script src="bezier.js"></script>
+        <script>
+
+            const canvas = document.getElementById("display");
+            const ctx = canvas.getContext("2d");
+
+            const resize = () => {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+                requestAnimationFrame(render);
+            };
+
+            const render = async () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                await quad.draw(ctx);
+                await cube.draw(ctx);
+                await quar.draw(ctx);
+                requestAnimationFrame(render);
+            }
+
+            let mousePos = new Vector2(0, 0);
+            let selectedPoint = null;
+
+            const dragstart = (e) => {
+
+                e.preventDefault();
+
+                mousePos.x = e.clientX - canvas.offsetLeft;
+                mousePos.y = e.clientY - canvas.offsetTop;
+
+                let distances = [];
+
+                for (let i = 0; i < controlPoints.length; i++) {
+                    distances.push(
+                        Vector2.Distance(controlPoints[i].position, mousePos)
+                    );
+                }
+
+                let minDist = Math.min(...distances);
+                let minIndex = distances.indexOf(minDist);
+
+                if (minDist <= controlPoints[minIndex].radius) {
+                    selectedPoint = controlPoints[minIndex];
+                }
+
+            };
+
+            const drag = (e) => {
+                
+                if (!selectedPoint) return;
+                e.preventDefault();
+
+                let dx = (e.clientX - canvas.offsetLeft) - mousePos.x;
+                let dy = (e.clientY - canvas.offsetTop) - mousePos.y;
+
+                mousePos.x = e.clientX;
+                mousePos.y = e.clientY;
+
+                selectedPoint.position.x += dx;
+                selectedPoint.position.y += dy;
+
+            };
+
+            const dragend = (e) => {
+
+                e.preventDefault();
+                selectedPoint = null;
+
+            };
+
+            const updateControlLines = () => {
+                quad.renderControl = !quad.renderControl;
+                cube.renderControl = !cube.renderControl;
+                quar.renderControl = !quar.renderControl;
+            };
+
+            document.getElementById('control-lines').addEventListener('input', updateControlLines);
+
+            const updateTangentLines = () => {
+                quad.renderTangent = !quad.renderTangent;
+                cube.renderTangent = !cube.renderTangent;
+                quar.renderTangent = !quar.renderTangent;
+            };
+
+            document.getElementById('tangent-lines').addEventListener('input', updateTangentLines);
+
+            resize();
+
+            let controlPoints = [
+                new DraggablePoint(7.5, new Vector2(canvas.width / 3, canvas.height / 3)),
+                new DraggablePoint(7.5, new Vector2(canvas.width / 2, (canvas.height / 4) * 2)),
+                new DraggablePoint(7.5, new Vector2((canvas.width / 3) * 2, canvas.height / 3)),
+
+                new DraggablePoint(7.5, new Vector2(canvas.width / 3, (canvas.height / 4) * 3)),
+                new DraggablePoint(7.5, new Vector2(canvas.width / 3, canvas.height / 1.75)),
+                new DraggablePoint(7.5, new Vector2((canvas.width / 3) * 2, canvas.height / 1.75)),
+                new DraggablePoint(7.5, new Vector2((canvas.width / 3) * 2, (canvas.height / 4) * 3)),
+
+                new DraggablePoint(7.5, new Vector2(100, 250)),
+                new DraggablePoint(7.5, new Vector2(100, 150)),
+                new DraggablePoint(7.5, new Vector2(250, 25)),
+                new DraggablePoint(7.5, new Vector2(400, 150)),
+                new DraggablePoint(7.5, new Vector2(400, 250))
+            ];
+
+            let quad = new QuadraticCurve(controlPoints[0], controlPoints[1], controlPoints[2]);
+            let cube = new CubicCurve(controlPoints[3], controlPoints[4], controlPoints[5], controlPoints[6]);
+            let quar = new QuarticCurve(controlPoints[7], controlPoints[8], controlPoints[9], controlPoints[10], controlPoints[11]);
+
+            window.addEventListener('resize', resize);
+            canvas.addEventListener('mousedown', dragstart);
+            canvas.addEventListener('mousemove', drag);
+            canvas.addEventListener('mouseup', dragend);
+            requestAnimationFrame(render);
+
+        </script>
+    </body>
+</html>
